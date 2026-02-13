@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Catch The Ball Game</title>
+  <style>
+    body {
+      margin: 0;
+      background: #111;
+      overflow: hidden;
+      font-family: Arial, sans-serif;
+      color: white;
+    }
+
+    #game {
+      width: 100vw;
+      height: 100vh;
+      position: relative;
+      background: linear-gradient(#222, #000);
+    }
+
+    #player {
+      width: 80px;
+      height: 20px;
+      background: cyan;
+      position: absolute;
+      bottom: 20px;
+      left: 50%;
+      transform: translateX(-50%);
+      border-radius: 10px;
+    }
+
+    .ball {
+      width: 30px;
+      height: 30px;
+      background: red;
+      border-radius: 50%;
+      position: absolute;
+      top: 0;
+    }
+
+    #score {
+      position: absolute;
+      top: 10px;
+      left: 10px;
+      font-size: 20px;
+    }
+
+    #gameOver {
+      position: absolute;
+      inset: 0;
+      background: rgba(0,0,0,0.8);
+      display: none;
+      justify-content: center;
+      align-items: center;
+      flex-direction: column;
+      font-size: 30px;
+    }
+
+    button {
+      padding: 12px 25px;
+      font-size: 18px;
+      border: none;
+      border-radius: 8px;
+      background: #00ffff;
+      cursor: pointer;
+    }
+  </style>
+</head>
+<body>
+
+<div id="game">
+  <div id="score">Score: 0</div>
+  <div id="player"></div>
+  <div id="gameOver">
+    <div>💀 Game Over</div>
+    <br>
+    <button onclick="location.reload()">Restart</button>
+  </div>
+</div>
+
+<script>
+  const game = document.getElementById("game");
+  const player = document.getElementById("player");
+  const scoreText = document.getElementById("score");
+  const gameOverScreen = document.getElementById("gameOver");
+
+  let score = 0;
+  let gameOver = false;
+
+  // Player movement (touch + mouse)
+  let playerX = window.innerWidth / 2;
+
+  document.addEventListener("mousemove", e => {
+    playerX = e.clientX;
+    movePlayer();
+  });
+
+  document.addEventListener("touchmove", e => {
+    playerX = e.touches[0].clientX;
+    movePlayer();
+  });
+
+  function movePlayer() {
+    player.style.left = playerX - 40 + "px";
+  }
+
+  function createBall() {
+    if (gameOver) return;
+
+    const ball = document.createElement("div");
+    ball.className = "ball";
+    ball.style.left = Math.random() * (window.innerWidth - 30) + "px";
+    game.appendChild(ball);
+
+    let y = 0;
+    const speed = 3 + Math.random() * 3;
+
+    const fall = setInterval(() => {
+      if (gameOver) {
+        clearInterval(fall);
+        return;
+      }
+
+      y += speed;
+      ball.style.top = y + "px";
+
+      const ballRect = ball.getBoundingClientRect();
+      const playerRect = player.getBoundingClientRect();
+
+      // Collision check
+      if (
+        ballRect.bottom >= playerRect.top &&
+        ballRect.left < playerRect.right &&
+        ballRect.right > playerRect.left
+      ) {
+        // Ball burst 💥
+        ball.remove();
+        clearInterval(fall);
+        score++;
+        scoreText.textContent = "Score: " + score;
+      }
+
+      // Missed → Game Over
+      if (y > window.innerHeight) {
+        gameOver = true;
+        gameOverScreen.style.display = "flex";
+        clearInterval(fall);
+      }
+    }, 16);
+  }
+
+  // New ball every 1 second
+  setInterval(createBall, 1000);
+</script>
+
+</body>
+</html>
