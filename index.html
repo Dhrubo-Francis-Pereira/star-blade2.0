@@ -3,41 +3,14 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Catch The Ball Game</title>
+  <title>Dark Catch Game</title>
   <style>
     body {
       margin: 0;
-      background: #111;
+      background: black;
       overflow: hidden;
       font-family: Arial, sans-serif;
       color: white;
-    }
-
-    #game {
-      width: 100vw;
-      height: 100vh;
-      position: relative;
-      background: linear-gradient(#222, #000);
-    }
-
-    #player {
-      width: 80px;
-      height: 20px;
-      background: cyan;
-      position: absolute;
-      bottom: 20px;
-      left: 50%;
-      transform: translateX(-50%);
-      border-radius: 10px;
-    }
-
-    .ball {
-      width: 30px;
-      height: 30px;
-      background: red;
-      border-radius: 50%;
-      position: absolute;
-      top: 0;
     }
 
     #score {
@@ -45,17 +18,40 @@
       top: 10px;
       left: 10px;
       font-size: 20px;
+      z-index: 10;
+    }
+
+    .enemy {
+      position: absolute;
+      font-size: 40px;
+      color: red;
+      text-shadow: 0 0 10px yellow;
+    }
+
+    #player {
+      position: absolute;
+      bottom: 40px;
+      font-size: 60px;
+      animation: spin 1s linear infinite;
+      color: cyan;
+      text-shadow: 0 0 15px cyan;
+    }
+
+    @keyframes spin {
+      from { transform: rotate(0deg); }
+      to   { transform: rotate(360deg); }
     }
 
     #gameOver {
-      position: absolute;
+      position: fixed;
       inset: 0;
-      background: rgba(0,0,0,0.8);
+      background: rgba(0,0,0,0.85);
       display: none;
       justify-content: center;
       align-items: center;
       flex-direction: column;
-      font-size: 30px;
+      font-size: 32px;
+      z-index: 20;
     }
 
     button {
@@ -63,34 +59,39 @@
       font-size: 18px;
       border: none;
       border-radius: 8px;
-      background: #00ffff;
+      background: cyan;
+      color: black;
       cursor: pointer;
     }
   </style>
 </head>
 <body>
 
-<div id="game">
-  <div id="score">Score: 0</div>
-  <div id="player"></div>
-  <div id="gameOver">
-    <div>💀 Game Over</div>
-    <br>
-    <button onclick="location.reload()">Restart</button>
-  </div>
+<div id="score">Score: 0</div>
+<div id="player">✴️</div>
+
+<div id="gameOver">
+  <div>💀 GAME OVER</div><br>
+  <button onclick="location.reload()">Restart</button>
 </div>
 
+<audio id="hitSound" src="https://cdn.pixabay.com/download/audio/2022/03/15/audio_1c0d3c47e3.mp3?filename=laser-hit-81267.mp3"></audio>
+<audio id="missSound" src="https://cdn.pixabay.com/download/audio/2022/03/15/audio_7c93a2c5c7.mp3?filename=negative_beeps-6008.mp3"></audio>
+
 <script>
-  const game = document.getElementById("game");
   const player = document.getElementById("player");
   const scoreText = document.getElementById("score");
   const gameOverScreen = document.getElementById("gameOver");
+  const hitSound = document.getElementById("hitSound");
+  const missSound = document.getElementById("missSound");
 
   let score = 0;
   let gameOver = false;
-
-  // Player movement (touch + mouse)
   let playerX = window.innerWidth / 2;
+
+  function movePlayer() {
+    player.style.left = playerX - 30 + "px";
+  }
 
   document.addEventListener("mousemove", e => {
     playerX = e.clientX;
@@ -102,48 +103,46 @@
     movePlayer();
   });
 
-  function movePlayer() {
-    player.style.left = playerX - 40 + "px";
-  }
-
-  function createBall() {
+  function createEnemy() {
     if (gameOver) return;
 
-    const ball = document.createElement("div");
-    ball.className = "ball";
-    ball.style.left = Math.random() * (window.innerWidth - 30) + "px";
-    game.appendChild(ball);
+    const enemy = document.createElement("div");
+    enemy.className = "enemy";
+    enemy.textContent = "⚡";
+    enemy.style.left = Math.random() * (window.innerWidth - 40) + "px";
+    enemy.style.top = "0px";
+    document.body.appendChild(enemy);
 
     let y = 0;
     const speed = 3 + Math.random() * 3;
 
     const fall = setInterval(() => {
-      if (gameOver) {
-        clearInterval(fall);
-        return;
-      }
+      if (gameOver) return clearInterval(fall);
 
       y += speed;
-      ball.style.top = y + "px";
+      enemy.style.top = y + "px";
 
-      const ballRect = ball.getBoundingClientRect();
-      const playerRect = player.getBoundingClientRect();
+      const e = enemy.getBoundingClientRect();
+      const p = player.getBoundingClientRect();
 
-      // Collision check
+      // collision
       if (
-        ballRect.bottom >= playerRect.top &&
-        ballRect.left < playerRect.right &&
-        ballRect.right > playerRect.left
+        e.bottom >= p.top &&
+        e.left < p.right &&
+        e.right > p.left
       ) {
-        // Ball burst 💥
-        ball.remove();
+        hitSound.currentTime = 0;
+        hitSound.play();
+        enemy.textContent = "💥";
+        setTimeout(() => enemy.remove(), 100);
         clearInterval(fall);
         score++;
         scoreText.textContent = "Score: " + score;
       }
 
-      // Missed → Game Over
+      // miss
       if (y > window.innerHeight) {
+        missSound.play();
         gameOver = true;
         gameOverScreen.style.display = "flex";
         clearInterval(fall);
@@ -151,8 +150,7 @@
     }, 16);
   }
 
-  // New ball every 1 second
-  setInterval(createBall, 1000);
+  setInterval(createEnemy, 900);
 </script>
 
 </body>
